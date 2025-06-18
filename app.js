@@ -455,6 +455,60 @@ function setTimerMode(mode, minutes) {
     event.target.classList.add('active');
 }
 
+async function toggleTaskStatus(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) {
+        showError('Task not found for status update.');
+        return;
+    }
+
+    let newStatus;
+    switch (task.status) {
+        case 'todo':
+            newStatus = 'in_progress';
+            break;
+        case 'in_progress':
+            newStatus = 'review';
+            break;
+        case 'review':
+            newStatus = 'done';
+            break;
+        case 'done':
+            newStatus = 'todo';
+            break;
+        default:
+            newStatus = 'todo';
+    }
+
+    try {
+        const response = await apiRequest(`api/tasks.php`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                id: taskId,
+                status: newStatus,
+                title: task.title,
+                description: task.description,
+                priority: task.priority,
+                category: task.category,
+                due_date: task.due_date,
+                urgency: task.urgency,
+                importance: task.importance
+            })
+        });
+
+        const updatedTaskIndex = tasks.findIndex(t => t.id === taskId);
+        if (updatedTaskIndex !== -1) {
+            tasks[updatedTaskIndex] = response.task;
+        }
+        renderTasks();
+        console.log('Task status updated successfully.');
+        showError('Task status updated successfully.');
+    } catch (error) {
+        showError('Failed to update task status: ' + error.message);
+        console.error('Error updating task status:', error);
+    }
+}
+
 function resetTimer() {
     const modeMinutes = {
         pomodoro: 25,
